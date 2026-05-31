@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 
 PAGE_WIDTH = 612  # Letter
@@ -39,9 +38,9 @@ class PdfWriter:
         )
 
     def _make_stream(self, lines: list[str]) -> bytes:
-        content = "\n".join(lines).encode("ascii")
+        content = "\n".join(lines).encode("utf-8")
         return (
-            f"<< /Length {len(content)} >>\nstream\n".encode("ascii")
+            f"<< /Length {len(content)} >>\nstream\n".encode("utf-8")
             + content
             + b"\nendstream"
         )
@@ -87,7 +86,7 @@ class PdfWriter:
                         (
                             f"<< /Type /Annot /Subtype /Link /Rect [{rect[0]} {rect[1]} {rect[2]} {rect[3]}] "
                             f"/Border [0 0 0] /A << /S /URI /URI ({self._escape_text(url)}) >> >>"
-                        ).encode("ascii")
+                        ).encode("utf-8")
                     ))
                     y -= LINE_HEIGHT + 2
                 elif kind == "spacer":
@@ -104,7 +103,7 @@ class PdfWriter:
                     f"/Contents {stream_obj} 0 R"
                     + (f" /Annots [{ ' '.join(f'{aid} 0 R' for aid in annots) }]" if annots else "")
                     + " >>"
-                ).encode("ascii")
+                ).encode("utf-8")
             )
             page_obj_ids.append(page_obj)
             page_annots.append(annots)
@@ -113,13 +112,13 @@ class PdfWriter:
             (
                 f"<< /Type /Pages /Kids [{' '.join(f'{pid} 0 R' for pid in page_obj_ids)}] "
                 f"/Count {len(page_obj_ids)} >>"
-            ).encode("ascii")
+            ).encode("utf-8")
         )
 
         # Patch each page parent reference after the /Pages object exists.
         for idx, page_obj_id in enumerate(page_obj_ids):
             obj = self.objects[page_obj_id - 1]
-            self.objects[page_obj_id - 1] = obj.replace(b"/Parent 0 0 R", f"/Parent {pages_obj} 0 R".encode("ascii"))
+            self.objects[page_obj_id - 1] = obj.replace(b"/Parent 0 0 R", f"/Parent {pages_obj} 0 R".encode("utf-8"))
 
         info_obj = self.add_object(
             (
@@ -127,11 +126,11 @@ class PdfWriter:
                 "/Author (OpenAI Codex) "
                 "/Subject (Learning roadmap for a Python web security scanner and hardening assistant) "
                 "/Producer (Custom PDF generator) >>"
-            ).encode("ascii")
+            ).encode("utf-8")
         )
 
         catalog_obj = self.add_object(
-            f"<< /Type /Catalog /Pages {pages_obj} 0 R >>".encode("ascii")
+            f"<< /Type /Catalog /Pages {pages_obj} 0 R >>".encode("utf-8")
         )
 
         pdf = bytearray()
@@ -140,20 +139,20 @@ class PdfWriter:
         offsets = [0]
         for idx, obj in enumerate(self.objects, start=1):
             offsets.append(len(pdf))
-            pdf.extend(f"{idx} 0 obj\n".encode("ascii"))
+            pdf.extend(f"{idx} 0 obj\n".encode("utf-8"))
             pdf.extend(obj)
             pdf.extend(b"\nendobj\n")
 
         xref_pos = len(pdf)
-        pdf.extend(f"xref\n0 {len(self.objects) + 1}\n".encode("ascii"))
+        pdf.extend(f"xref\n0 {len(self.objects) + 1}\n".encode("utf-8"))
         pdf.extend(b"0000000000 65535 f \n")
         for off in offsets[1:]:
-            pdf.extend(f"{off:010d} 00000 n \n".encode("ascii"))
+            pdf.extend(f"{off:010d} 00000 n \n".encode("utf-8"))
         pdf.extend(
             (
                 f"trailer\n<< /Size {len(self.objects) + 1} /Root {catalog_obj} 0 R /Info {info_obj} 0 R >>\n"
                 f"startxref\n{xref_pos}\n%%EOF\n"
-            ).encode("ascii")
+            ).encode("utf-8")
         )
 
         output_path.write_bytes(pdf)

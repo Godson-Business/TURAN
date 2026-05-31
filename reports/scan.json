@@ -1,22 +1,59 @@
 {
   "target": {
-    "url": "https://example.com/",
-    "scheme": "https",
-    "host": "example.com",
+    "url": "http://69.10.53.250/",
+    "scheme": "http",
+    "host": "69.10.53.250",
     "port": null,
     "scope_root": null
   },
+  "context": {
+    "root": "C:\\Users\\WANNEY\\Desktop\\TURAN\\Turan",
+    "target": {
+      "value": "http://69.10.53.250",
+      "source": "C:\\Users\\WANNEY\\Desktop\\TURAN\\Turan\\.env",
+      "key": "APP_URL"
+    },
+    "discovery": {
+      "discovered": true,
+      "app_name": null,
+      "target_url": "http://69.10.53.250",
+      "target_source": "C:\\Users\\WANNEY\\Desktop\\TURAN\\Turan\\.env",
+      "public_url": null,
+      "local_url": null,
+      "env_file": "C:\\Users\\WANNEY\\Desktop\\TURAN\\Turan\\.env",
+      "env_source": "project .env",
+      "nginx_config": null,
+      "systemd_service": null,
+      "signals": [
+        {
+          "name": "configured target",
+          "status": "ok",
+          "summary": "http://69.10.53.250",
+          "details": {
+            "source": "C:\\Users\\WANNEY\\Desktop\\TURAN\\Turan\\.env",
+            "key": "APP_URL"
+          }
+        }
+      ],
+      "notes": [
+        "scan target configured in C:\\Users\\WANNEY\\Desktop\\TURAN\\Turan\\.env",
+        "no common localhost ports responded"
+      ]
+    }
+  },
+  "baseline_label": null,
   "findings": [
     {
-      "id": "target-unreachable",
-      "target_url": "https://example.com/",
-      "title": "Target unreachable",
-      "description": "Turan could not complete the initial request.",
+      "id": "weak-cookie-0",
+      "target_url": "http://69.10.53.250/",
+      "title": "Weak cookie flags",
+      "description": "A cookie is missing Secure or HttpOnly.",
       "severity": "low",
-      "category": "connectivity",
+      "category": "cookies",
       "evidence": {
-        "error": "ConnectError",
-        "url": "https://example.com/"
+        "set_cookie": "csrf_token=BEyKn9-erT6Tv-DzNyTLqcsOBlTghLuIzz_B_mksk-g; Path=/; SameSite=Lax",
+        "status_code": 200,
+        "url": "http://69.10.53.250/"
       },
       "fix_level": 0,
       "risk_level": "low",
@@ -24,18 +61,56 @@
       "backup_path": null,
       "rollback_command": null,
       "expected_impact": "Report only; no system change required.",
-      "references": []
-    }
-  ],
-  "fix_plans": [
+      "references": [
+        "https://owasp.org/www-community/HttpOnly"
+      ]
+    },
     {
-      "finding_id": "target-unreachable",
+      "id": "server-banner-disclosure",
+      "target_url": "http://69.10.53.250/",
+      "title": "Server information disclosure",
+      "description": "The response reveals a server banner or framework header.",
+      "severity": "low",
+      "category": "server_info",
+      "evidence": {
+        "header_value": "nginx",
+        "status_code": 200,
+        "url": "http://69.10.53.250/"
+      },
       "fix_level": 0,
       "risk_level": "low",
       "requires_approval": false,
       "backup_path": null,
-      "rollback_command": "echo rollback not yet implemented",
+      "rollback_command": null,
       "expected_impact": "Report only; no system change required.",
+      "references": [
+        "https://owasp.org/www-project-web-security-testing-guide/"
+      ]
+    }
+  ],
+  "fix_plans": [
+    {
+      "finding_id": "weak-cookie-0",
+      "fix_level": 0,
+      "risk_level": "low",
+      "requires_approval": false,
+      "backup_path": null,
+      "rollback_command": "Restore the previous cookie settings.",
+      "expected_impact": "Set Secure and HttpOnly where the cookie is issued first.",
+      "status": "proposed",
+      "approved_by": null,
+      "approved_at": null,
+      "applied_at": null,
+      "confidence": 1.0
+    },
+    {
+      "finding_id": "server-banner-disclosure",
+      "fix_level": 0,
+      "risk_level": "low",
+      "requires_approval": false,
+      "backup_path": null,
+      "rollback_command": "Re-enable the banner only if you really need it.",
+      "expected_impact": "Hide the banner in the web server config first.",
       "status": "proposed",
       "approved_by": null,
       "approved_at": null,
@@ -44,12 +119,10 @@
     }
   ],
   "scanned_urls": [
-    "https://example.com/"
+    "http://69.10.53.250/"
   ],
-  "notes": [
-    "Request failed: ConnectError"
-  ],
+  "notes": [],
   "waf_signals": [],
   "tls_summary": {},
-  "scan_confidence": 0.0
+  "scan_confidence": 1.0
 }
