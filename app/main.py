@@ -51,6 +51,8 @@ from app.reports.json_report import write_json_report
 from app.reports.markdown_report import write_markdown_report
 from app.reports.stored_report import render_stored_report_preview
 
+from app.recon.dns import resolve_host
+from app.recon.subdomains import enumerate_subdomains
 
 app = typer.Typer(
     add_completion=False,
@@ -624,74 +626,45 @@ def fix(
         )
         return
 
-    if not target_path.exists():
-        local_fix_result = LocalFixResult(
-            target_path=str(target_path),
-            status="blocked",
-            reason="The discovered local fix target does not exist.",
-            notes=["No file was changed."],
-        )
-        console.print(render_local_fix_result(local_fix_result))
-        append_audit_event(
-            write_audit_path,
-            build_local_fix_audit_event(str(context.target.value), local_fix_result, policy.allowed_fix_level),
-        )
-        return
 
-    if not ask_to_create_backup():
-        local_fix_result = LocalFixResult(
-            target_path=str(target_path),
-            status="skipped",
-            reason="Backup declined.",
-            notes=["No file was changed."],
-        )
-        console.print(render_local_fix_result(local_fix_result))
-        append_audit_event(
-            write_audit_path,
-            build_local_fix_audit_event(str(context.target.value), local_fix_result, policy.allowed_fix_level),
-        )
-        return
+@app.command()
+def recon(domain: str):
+    """
+    Run DNS and subdomain reconnaissance.
+    """
 
-    try:
-        backup_path = create_backup(target_path, target_path.parent)
-    except PermissionError as exc:
-        local_fix_result = LocalFixResult(
-            target_path=str(target_path),
-            status="blocked",
-            reason=str(exc),
-            notes=["No file was changed."],
-        )
-        console.print(render_local_fix_result(local_fix_result))
-        append_audit_event(
-            write_audit_path,
-            build_local_fix_audit_event(str(context.target.value), local_fix_result, policy.allowed_fix_level),
-        )
-        return
-    console.print(f"Backup created before apply: {display_path_value(backup_path) or backup_path.as_posix()}")
-    if not ask_to_apply_local_fix():
-        local_fix_result = LocalFixResult(
-            target_path=str(target_path),
-            status="skipped",
-            reason="Skipped by user.",
-            notes=["No file was changed."],
-        )
-        console.print(render_local_fix_result(local_fix_result))
-        append_audit_event(
-            write_audit_path,
-            build_local_fix_audit_event(str(context.target.value), local_fix_result, policy.allowed_fix_level),
-        )
-        return
+    typer.echo("")
+    typer.echo(f"[+] Recon on {domain}")
+    typer.echo("")
 
-    console.print(f"Applying local fix to {target_path.as_posix()}")
-    supported_categories = [finding.category for finding in result.findings if finding.category in {"server_info", "headers"}]
-    local_fix_result = apply_local_nginx_hardening_fix(target_path, supported_categories, backup_path)
-    console.print(render_local_fix_result(local_fix_result))
-    append_audit_event(
-        write_audit_path,
-        build_local_fix_audit_event(str(context.target.value), local_fix_result, policy.allowed_fix_level),
+    host = resolve_host(domain)
+
+    typer.echo(
+        f"Domain: {host['hostname']}"
     )
 
+    typer.echo(
+        f"IP: {host['ip']}"
+    )
 
+    typer.echo("")
+
+    typer.echo("[+] Discovered Subdomains")
+
+    results = enumerate_subdomains(domain)
+
+    if not results:
+        typer.echo("No common subdomains found.")
+        return
+
+    for item in results:
+        typer.echo(
+            f"{item['hostname']} -> {item['ip']}"
+        )
+
+    return            
+
+    
 @app.command(help="Render or preview a saved scan report from disk.")
 def report(
     report_file: Path,
