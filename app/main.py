@@ -612,9 +612,12 @@ def fix(
 
     target_path = choose_local_fix_target(result)
     write_audit_path = audit_log_path or Path(policy.audit_log_path)
+
     if target_path is None:
         local_fix_result = LocalFixResult(
-            target_path=context.discovery.nginx_config or context.discovery.systemd_service or context.root,
+            target_path=context.discovery.nginx_config
+            or context.discovery.systemd_service
+            or context.root,
             status="blocked",
             reason="No supported local fix target was discovered for the first live edit lane.",
             notes=["Turan found the server layout, but not a supported file to edit yet."],
@@ -622,9 +625,123 @@ def fix(
         console.print(render_local_fix_result(local_fix_result))
         append_audit_event(
             write_audit_path,
-            build_local_fix_audit_event(str(context.target.value), local_fix_result, policy.allowed_fix_level),
+            build_local_fix_audit_event(
+                str(context.target.value),
+                local_fix_result,
+                policy.allowed_fix_level,
+            ),
         )
         return
+
+    if not target_path.exists():
+        local_fix_result = LocalFixResult(
+            target_path=str(target_path),
+            status="blocked",
+            reason="The discovered local fix target does not exist.",
+            notes=["No file was changed."],
+        )
+        console.print(render_local_fix_result(local_fix_result))
+        append_audit_event(
+            write_audit_path,
+            build_local_fix_audit_event(
+                str(context.target.value),
+                local_fix_result,
+                policy.allowed_fix_level,
+            ),
+        )
+        return
+
+    if not ask_to_create_backup():
+        local_fix_result = LocalFixResult(
+            target_path=str(target_path),
+            status="skipped",
+            reason="Backup declined.",
+            notes=["No file was changed."],
+        )
+        console.print(render_local_fix_result(local_fix_result))
+        append_audit_event(
+            write_audit_path,
+            build_local_fix_audit_event(
+                str(context.target.value),
+                local_fix_result,
+                policy.allowed_fix_level,
+            ),
+        )
+        return
+
+    try:
+        backup_path = create_backup(
+            target_path,
+            target_path.parent,
+        )
+    except PermissionError as exc:
+        local_fix_result = LocalFixResult(
+            target_path=str(target_path),
+            status="blocked",
+            reason=str(exc),
+            notes=["No file was changed."],
+        )
+        console.print(render_local_fix_result(local_fix_result))
+        append_audit_event(
+            write_audit_path,
+            build_local_fix_audit_event(
+                str(context.target.value),
+                local_fix_result,
+                policy.allowed_fix_level,
+            ),
+        )
+        return
+
+    console.print(
+        f"Backup created before apply: {backup_path}"
+    )
+
+    if not ask_to_apply_local_fix():
+        local_fix_result = LocalFixResult(
+            target_path=str(target_path),
+            status="skipped",
+            reason="Skipped by user.",
+            notes=["No file was changed."],
+        )
+        console.print(render_local_fix_result(local_fix_result))
+        append_audit_event(
+            write_audit_path,
+            build_local_fix_audit_event(
+                str(context.target.value),
+                local_fix_result,
+                policy.allowed_fix_level,
+            ),
+        )
+        return
+
+    console.print(
+        f"Applying local fix to {target_path.as_posix()}"
+    )
+
+    supported_categories = [
+        finding.category
+        for finding in result.findings
+        if finding.category in {"server_info", "headers"}
+    ]
+
+    local_fix_result = apply_local_nginx_hardening_fix(
+        target_path,
+        supported_categories,
+        backup_path,
+    )
+
+    console.print(
+        render_local_fix_result(local_fix_result)
+    )
+
+    append_audit_event(
+        write_audit_path,
+        build_local_fix_audit_event(
+            str(context.target.value),
+            local_fix_result,
+            policy.allowed_fix_level,
+        ),
+    )
 
 
 @app.command()

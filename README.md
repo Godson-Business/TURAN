@@ -1,14 +1,92 @@
+
 # Turan
 
-Turan is a Python-based web security scanner and hardening assistant.
+Turan is a Python-based web security scanner, reconnaissance tool, and hardening assistant designed for security assessments, vulnerability discovery, and defensive security reviews.
+
+## Cybersecurity Features
+
+### Reconnaissance
+
+* DNS resolution
+* Subdomain enumeration
+* Host discovery
+* Server fingerprinting
+* WAF/CDN detection
+
+### Vulnerability Detection
+
+* Missing security headers
+* Weak cookie configurations
+* Server banner disclosure
+* Cross-Site Scripting (XSS) checks
+* SQL Injection (SQLi) checks
+* Server-Side Template Injection (SSTI) checks
+* Directory Traversal checks
+* CSRF checks
+* Clickjacking checks
+* Open Redirect checks
+* Information Disclosure checks
+* Exposed file discovery
+
+### TLS & Encryption
+
+* TLS certificate inspection
+* Certificate expiration detection
+* HTTPS configuration review
+
+### Hardening & Remediation
+
+* Automated remediation recommendations
+* Interactive fix planning
+* Safe local fix execution
+* Configuration backup and rollback
+* Security audit logging
+
+### Reporting
+
+* JSON reports
+* Markdown reports
+* HTML reports
+* Baseline snapshots
+* Security comparison reports
+* Audit history tracking
+
+## Current Commands
+
+* scan
+* recon
+* report
+* baseline
+* compare
+* audit
+* doctor
+* server-check
+* fix
+* demo-site
+
 
 ## Status
 
-Active CLI slice with scan, report, baseline, compare, audit, doctor, server-check, fix, and demo-site commands.
+Active cybersecurity CLI platform with:
+
+- Web vulnerability scanning
+- TLS inspection
+- Security header auditing
+- Cookie auditing
+- WAF detection
+- DNS reconnaissance
+- Subdomain enumeration
+- Hardening recommendations
+- Baseline comparison
+- Audit logging
+- Interactive remediation workflows
+
+Current test suite: 75 passing tests.
 
 ## Commands
 
 - `scan` scans a live target, or falls back to `APP_URL` / `TARGET_URL` / `BASE_URL` in `.env` or `--env-file`, then discovers a local app target when needed
+- `recon` performs DNS resolution and subdomain enumeration
 - `report` re-renders or previews a saved scan report
 - `audit` shows the append-only audit history
 - `baseline` saves a scan snapshot for later comparison
@@ -42,6 +120,26 @@ You can also point Turan at a specific env file:
 
 ```powershell
 .\venv\Scripts\python.exe -m app.main scan --env-file C:\path\to\autoentrytrack\.env
+```
+
+## Reconnaissance
+
+Run DNS and subdomain enumeration:
+
+```powershell
+.\venv\Scripts\python.exe -m app.main recon example.com
+```
+
+Example output:
+
+```text
+[+] Recon on example.com
+
+Domain: example.com
+IP: 104.20.23.154
+
+[+] Discovered Subdomains
+www.example.com -> 104.20.23.154
 ```
 
 ## `.env` variables
@@ -219,4 +317,31 @@ Then scan it from another terminal:
 
 ```powershell
 .\venv\Scripts\python.exe -m app.main scan http://127.0.0.1:8000
+```
+## Project Structure
+
+```text
+app/
+├── checks/          # Vulnerability detection modules
+├── recon/           # DNS and subdomain reconnaissance
+├── hardening/       # Fix planning and remediation
+├── reports/         # JSON, Markdown, HTML reporting
+├── http/            # HTTP client and URL handling
+├── scanner.py       # Core scan engine
+├── doctor.py        # Local environment checks
+├── main.py          # CLI entrypoint
+└── models.py        # Shared data models
+```
+## Testing
+
+Run the full test suite:
+
+```powershell
+python -m pytest
+```
+
+Current status:
+
+```text
+75 passed
 ```
